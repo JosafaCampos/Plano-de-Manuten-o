@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Plano de Manutenção</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    h2 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .tab {
+      overflow: hidden;
+      background-color: #333;
+      border-radius: 5px 5px 0 0;
+    }
+
+    .tab button {
+      background-color: inherit;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      transition: 0.3s;
+      color: white;
+      font-weight: bold;
+    }
+
+    .tab button:hover {
+      background-color: #575757;
+    }
+
+    .tab button.active {
+      background-color: #04AA6D;
+    }
+
+    .tabcontent {
+      display: none;
+      padding: 20px;
+      background-color: white;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .equipment-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #555;
+    }
+    
+    .form-group input, 
+    .form-group select, 
+    .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    .full-width {
+      grid-column: 1 / -1;
+    }
+    
+    .save-btn {
+      background-color: #04AA6D;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    
+    .save-btn:hover {
+      background-color: #038a5a;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    
+    .status-ok {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .status-warning {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    
+    .status-danger {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .history-section {
+      margin-top: 30px;
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+    }
+    
+    .history-item {
+      background-color: #f9f9f9;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-left: 4px solid #04AA6D;
+    }
+    
+    /* Novo CSS para adicionar equipamentos */
+    .add-equipment {
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    .add-equipment-btn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    
+    .add-equipment-btn:hover {
+      background-color: #0069d9;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 5px;
+    }
+    
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .close:hover {
+      color: black;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Plano de Manutenção - Equipamentos</h2>
+
+<div class="add-equipment">
+  <button class="add-equipment-btn" onclick="openAddEquipmentModal()">+ Adicionar Novo Equipamento</button>
+</div>
+
+<div class="tab">
+  <button class="tablinks" onclick="openTab(event, 'Gerador')" id="defaultOpen">Gerador</button>
+  <button class="tablinks" onclick="openTab(event, 'Bomba')">Bomba d'água</button>
+  <button class="tablinks" onclick="openTab(event, 'Painel')">Painel Elétrico</button>
+  <button class="tablinks" onclick="openTab(event, 'Ar')">Ar-condicionado</button>
+</div>
+
+<!-- Modal para adicionar novo equipamento -->
+<div id="addEquipmentModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeAddEquipmentModal()">&times;</span>
+    <h2>Adicionar Novo Equipamento</h2>
+    <form id="newEquipmentForm" class="equipment-form">
+      <div class="form-group full-width">
+        <label for="new-equipment-name">Nome do Equipamento</label>
+        <input type="text" id="new-equipment-name" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="new-equipment-id">ID do Equipamento</label>
+        <input type="text" id="new-equipment-id" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="new-equipment-location">Localização</label>
+        <input type="text" id="new-equipment-location" required>
+      </div>
+      
+      <div class="form-group full-width">
+        <button type="button" class="save-btn" onclick="addNewEquipment()">Adicionar Equipamento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="Gerador" class="tabcontent">
+  <form class="equipment-form" id="gerador-form">
+    <div class="form-group">
+      <label for="gerador-id">ID do Equipamento</label>
+      <input type="text" id="gerador-id" value="GER-001" readonly>
+    </div>
+    
+    <div class="form-group">
+      <label for="gerador-localizacao">Localização</label>
+      <input type="text" id="gerador-localizacao" value="Sala de Máquinas - Térreo">
+    </div>
+    
+    <div class="form-group">
+      <label for="gerador-tipo-manutencao">Tipo de Manutenção</label>
+      <select id="gerador-tipo-manutencao">
+        <option>Preventiva</option>
+        <option>Corretiva</option>
+        <option>Preditiva</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="gerador-frequencia">Frequência</label>
+      <select id="gerador-frequencia">
+        <option>Mensal</option>
+        <option>Bimestral</option>
+        <option>Trimestral</option>
+        <option>Semestral</option>
+        <option>Anual</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="gerador-ultima">Última Manutenção</label>
+      <input type="date" id="gerador-ultima" value="2023-05-15">
+    </div>
+    
+    <div class="form-group">
+      <label for="gerador-proxima">Próxima Manutenção</label>
+      <input type="date" id="gerador-proxima" value="2023-06-15">
+    </div>
+    
+    <div class="form-group">
+      <label for="gerador-responsavel">Responsável Técnico</label>
+      <input type="text" id="gerador-responsavel" value="João Silva">
+    </div>
+    
+    <div class="form-group full-width">
+      <label for="gerador-instrucao">Instrução de Serviço</label>
+      <textarea id="gerador-instrucao">1. Verificar nível de óleo
+2. Testar bateria
+3. Inspecionar filtros de ar
+4. Verificar vazamentos
+5. Testar funcionamento sob carga</textarea>
+    </div>
+    
+    <div class="form-group full-width">
+      <label for="gerador-pecas">Peças de Reposição</label>
+      <textarea id="gerador-pecas">- Filtro de óleo
+- Filtro de ar
+- Bateria 12V
+- Velas de ignição</textarea>
+    </div>
+    
+    <div class="form-group">
+      <label for="gerador-status">Status Atual</label>
+      <select id="gerador-status">
+        <option value="ok">OK - Operacional</option>
+        <option value="warning">Atenção - Requer verificação</option>
+        <option value="danger">Crítico - Requer manutenção imediata</option>
+      </select>
+      <span id="gerador-status-display" class="status-indicator status-ok">OK - Operacional</span>
+    </div>
+    
+    <div class="form-group full-width">
+      <button type="button" class="save-btn" onclick="saveEquipment('gerador')">Salvar Alterações</button>
+    </div>
+    
+    <div class="history-section full-width">
+      <h3>Histórico de Manutenção</h3>
+      <div id="gerador-history">
+        <div class="history-item">
+          <strong>15/05/2023</strong> - Manutenção preventiva realizada. Troca de óleo e filtros. Responsável: João Silva.
+        </div>
+        <div class="history-item">
+          <strong>15/04/2023</strong> - Verificação de rotina. Níveis normais. Responsável: Maria Souza.
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div id="Bomba" class="tabcontent">
+  <form class="equipment-form" id="bomba-form">
+    <div class="form-group">
+      <label for="bomba-id">ID do Equipamento</label>
+      <input type="text" id="bomba-id" value="BOM-001" readonly>
+    </div>
+    
+    <div class="form-group">
+      <label for="bomba-localizacao">Localização</label>
+      <input type="text" id="bomba-localizacao" value="Casa de Bombas - Subsolo">
+    </div>
+    
+    <div class="form-group">
+      <label for="bomba-tipo-manutencao">Tipo de Manutenção</label>
+      <select id="bomba-tipo-manutencao">
+        <option>Preventiva</option>
+        <option>Corretiva</option>
+        <option>Preditiva</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="bomba-frequencia">Frequência</label>
+      <select id="bomba-frequencia">
+        <option>Mensal</option>
+        <option>Bimestral</option>
+        <option>Trimestral</option>
+        <option>Semestral</option>
+        <option>Anual</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="bomba-ultima">Última Manutenção</label>
+      <input type="date" id="bomba-ultima" value="2023-05-10">
+    </div>
+    
+    <div class="form-group">
+      <label for="bomba-proxima">Próxima Manutenção</label>
+      <input type="date" id="bomba-proxima" value="2023-06-10">
+    </div>
+    
+    <div class="form-group">
+      <label for="bomba-responsavel">Responsável Técnico</label>
+      <input type="text" id="bomba-responsavel" value="Carlos Oliveira">
+    </div>
+    
+    <div class="form-group full-width">
+      <label for="bomba-instrucao">Instrução de Serviço</label>
+      <textarea id="bomba-instrucao">1. Verificar pressão de trabalho
+2. Inspecionar vedações
+3. Lubrificar partes móveis
+4. Verificar vibração
+5. Testar funcionamento automático</textarea>
+    </div>
+    
+    <div class="form-group full-width">
+      <label for="bomba-pecas">Peças de Reposição</label>
+      <textarea id="bomba-pecas">- Vedação principal
+- Rolamentos
+- Junta tórica
+- Sensor de pressão</textarea>
+    </div>
+    
+    <div class="form-group">
+      <label for="bomba-status">Status Atual</label>
+      <select id="bomba-status">
+        <option value="ok">OK - Operacional</option>
+        <option value="warning" selected>Atenção - Requer verificação</option>
+        <option value="danger">Crítico - Requer manutenção imediata</option>
+      </select>
+      <span id="bomba-status-display" class="status-indicator status-warning">Atenção - Requer verificação</span>
+    </div>
+    
+    <div class="form-group full-width">
+      <button type="button" class="save-btn" onclick="saveEquipment('bomba')">Salvar Alterações</button>
+    </div>
+    
+    <div class="history-section full-width">
+      <h3>Histórico de Manutenção</h3>
+      <div id="bomba-history">
+        <div class="history-item">
+          <strong>10/05/2023</strong> - Verificação de vazamentos. Substituição de vedação. Responsável: Carlos Oliveira.
+        </div>
+        <div class="history-item">
+          <strong>10/04/2023</strong> - Manutenção preventiva. Lubrificação e ajustes. Responsável: Ana Paula.
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div id="Painel" class="tabcontent">
+  <form class="equipment-form" id="painel-form">
+    <div class="form-group">
+      <label for="painel-id">ID do Equipamento</label>
+      <input type="text" id="painel-id" value="PAN-001" readonly>
+    </div>
+    
+    <div class="form-group">
+      <label for="painel-localizacao">Localização</label>
+      <input type="text" id="painel-localizacao" value="Sala Elétrica - 1º Andar">
+    </div>
+    
+    <div class="form-group">
+      <label for="painel-tipo-manutencao">Tipo de Manutenção</label>
+      <select id="painel-tipo-manutencao">
+        <option>Preventiva</option>
+        <option>Corretiva</option>
+        <option>Preditiva</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="painel-frequencia">Frequência</label>
+      <select id="painel-frequencia">
+        <option>Mensal</option>
+        <option>Bimestral</option>
+        <option>Trimestral</option>
+        <option selected>Semestral</option>
+        <option>Anual</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="painel-ultima">Última Manutenção</label>
+      <input type="date" id="painel-ultima" value="2023-03-20">
+    </div>
+    
+    <div class="form-group">
+      <label for="painel-proxima">Próxima Manutenção</label>
+      <input type="date" id="painel-proxima" value="2023-09-20">
+    </div>
+    
+    <div class="form-group">
+      <label for="painel-responsavel">Responsável Técnico</label>
+      <input type="text" id="painel-responsavel" value="Pedro Henrique">
+    </div>
+    
+    <div class="form-group full-width">
+      <label for="painel-instrucao">Instrução de Serviço</label>
+      <textarea id="painel-instrucao">1. Verificar temperatura dos disjuntores
+2. Reapertar bornes
+3. Inspecionar indicadores luminosos
+4. Verificar aterramento
+5. Testar funcionamento dos disjuntores</textarea>
+    </div>
+    
+    <div class="form-group full-width">
+      <label for="painel-pecas">Peças de Reposição</label>
+      <textarea id="painel-pecas">- Disjuntor 30A
+- Fusíveis diversos
+- Lâmpadas indicadoras
+- Bornes de conexão</textarea>
+    </div>
+    
+    <div class="form-group">
+      <label for="painel-status">Status Atual</label>
+      <select id="painel-status">
+        <option value="ok" selected>OK - Operacional</option>
+        <option value="warning">Atenção - Requer verificação</option>
+        <option value="danger">Crítico - Requer manutenção imediata</option>
+      </select>
+      <span id="painel-status-display" class="status-indicator status-ok">OK - Operacional</span>
+    </div>
+    
+    <div class="form-group full-width">
+      <button type="button" class="save-btn" onclick="saveEquipment('painel')">Salvar Alterações</button>
+    </div>
+    
+    <div class="history-section full-width">
+      <h3>Histórico de Manutenção</h3>
+      <div id="painel-history">
+        <div class="history-item">
+          <strong>20/03/2023</strong> - Manutenção semestral. Reaperto de bornes e limpeza. Responsável: Pedro Henrique.
+        </div>
+        <div class="history-item">
+          <strong>20/09/2022</strong> - Substituição de disjuntor defeituoso. Responsável: Marcos Antônio.
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div id="Ar" class="tabcontent">
+  <form class="equipment-form" id="ar-form">
+    <div class="form-group">
+      <label for="ar-id">ID do Equipamento</label>
+      <input type="text" id="ar-id" value="AR-001" readonly>
+    </div>
+    
+    <div class="form-group">
+      <label for="ar-localizacao">Localização</label>
+      <input type="text" id="ar-localizacao" value="Sala de Servidores - 2º Andar">
+    </div>
+    
+    <div class="form-group">
+      <label for="ar-tipo-manutencao">Tipo de Manutenção</label>
+      <select id="ar-tipo-manutencao">
+        <option>Preventiva</option>
+        <option>Corretiva</option>
+        <option>Preditiva</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="ar-frequencia">Frequência</label>
+      <select id="ar-frequencia">
+        <option selected>Trimestral</option>
+        <option>Mensal</option>
+        <option>Bimestral</option>
+        <option>Semestral</option>
+        <option>Anual</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="ar-ultima">Última Manutenção</label>
+      <input type="date" id="ar-ultima" value="2023-04-05">
+    </div>
+    
+    <div class="form-group">
+      <label for="ar-proxima">Próxima Manutenção</label>
+      <input type="date" id="ar-proxima" value="2023-07-05">
+    </div>
+    
+    <div class="form-group">
+      <label for="ar-responsavel">Responsável Técnico</label>
+      <input type="text" id="ar-responsavel" value="Fernanda Lima">
+    </div>
+    
+    <div class="form-group full-width">
+      <label for="ar-instrucao">Instrução de Serviço</label>
+      <textarea id="ar-instrucao">1. Limpar filtros
+2. Verificar nível de gás refrigerante
+3. Limpar serpentinas
+4. Verificar drenagem
+5. Testar funcionamento do termostato</textarea>
+    </div>
+    
+    <div class="form-group full-width">
+      <label for="ar-pecas">Peças de Reposição</label>
+      <textarea id="ar-pecas">- Filtros de ar
+- Gás refrigerante R22
+- Sensor de temperatura
+- Ventoinha do condensador</textarea>
+    </div>
+    
+    <div class="form-group">
+      <label for="ar-status">Status Atual</label>
+      <select id="ar-status">
+        <option value="ok">OK - Operacional</option>
+        <option value="warning">Atenção - Requer verificação</option>
+        <option value="danger" selected>Crítico - Requer manutenção imediata</option>
+      </select>
+      <span id="ar-status-display" class="status-indicator status-danger">Crítico - Requer manutenção imediata</span>
+    </div>
+    
+    <div class="form-group full-width">
+      <button type="button" class="save-btn" onclick="saveEquipment('ar')">Salvar Alterações</button>
+    </div>
+    
+    <div class="history-section full-width">
+      <h3>Histórico de Manutenção</h3>
+      <div id="ar-history">
+        <div class="history-item">
+          <strong>05/04/2023</strong> - Limpeza de filtros e verificação de gás. Responsável: Fernanda Lima.
+        </div>
+        <div class="history-item">
+          <strong>05/01/2023</strong> - Problema no termostato. Substituição realizada. Responsável: Rafael Costa.
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+// Variável para armazenar equipamentos
+let equipments = [
+  { id: 'gerador', name: 'Gerador', tabId: 'Gerador' },
+  { id: 'bomba', name: "Bomba d'água", tabId: 'Bomba' },
+  { id: 'painel', name: 'Painel Elétrico', tabId: 'Painel' },
+  { id: 'ar', name: 'Ar-condicionado', tabId: 'Ar' }
+];
+
+function openTab(evt, equipamento) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+
+  document.getElementById(equipamento).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+
+// Atualiza o display do status quando o select é alterado
+document.querySelectorAll('[id$="-status"]').forEach(select => {
+  select.addEventListener('change', function() {
+    const prefix = this.id.split('-')[0];
+    const display = document.getElementById(`${prefix}-status-display`);
+    const value = this.value;
+    const text = this.options[this.selectedIndex].text;
+    
+    display.className = 'status-indicator';
+    if (value === 'ok') display.classList.add('status-ok');
+    if (value === 'warning') display.classList.add('status-warning');
+    if (value === 'danger') display.classList.add('status-danger');
+    
+    display.textContent = text;
+  });
+});
+
+function saveEquipment(equipment) {
+  // Captura os dados do formulário
+  const formData = {
+    id: document.getElementById(`${equipment}-id`).value,
+    localizacao: document.getElementById(`${equipment}-localizacao`).value,
+    tipoManutencao: document.getElementById(`${equipment}-tipo-manutencao`).value,
+    frequencia: document.getElementById(`${equipment}-frequencia`).value,
+    ultimaManutencao: document.getElementById(`${equipment}-ultima`).value,
+    proximaManutencao: document.getElementById(`${equipment}-proxima`).value,
+    responsavel: document.getElementById(`${equipment}-responsavel`).value,
+    instrucao: document.getElementById(`${equipment}-instrucao`).value,
+    pecas: document.getElementById(`${equipment}-pecas`).value,
+    status: document.getElementById(`${equipment}-status`).value
+  };
+  
+  // Aqui você pode adicionar a lógica para salvar os dados
+  // Por exemplo, enviar para um servidor ou salvar no localStorage
+  console.log(`Dados do ${equipment} salvos:`, formData);
+  
+  // Adiciona ao histórico
+  addToHistory(equipment, `Alterações salvas no equipamento ${equipment}`, 'alteracao');
+  
+  // Atualiza a próxima manutenção baseada na frequência
+  updateNextMaintenance(equipment);
+  
+  alert(`Dados do ${equipment} salvos com sucesso!`);
+}
+
+function addToHistory(equipment, message, type) {
+  const now = new Date();
+  const formattedDate = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+  
+  const historyItem = document.createElement('div');
+  historyItem.className = 'history-item';
+  historyItem.innerHTML = `<strong>${formattedDate}</strong> - ${message}`;
+  
+  document.getElementById(`${equipment}-history`).prepend(historyItem);
+}
+
+function updateNextMaintenance(equipment) {
+  const lastDate = document.getElementById(`${equipment}-ultima`).value;
+  const frequency = document.getElementById(`${equipment}-frequencia`).value;
+  
+  if (!lastDate) return;
+  
+  const last = new Date(lastDate);
+  let next = new Date(last);
+  
+  switch(frequency) {
+    case 'Mensal':
+      next.setMonth(next.getMonth() + 1);
+      break;
+    case 'Bimestral':
+      next.setMonth(next.getMonth() + 2);
+      break;
+    case 'Trimestral':
+      next.setMonth(next.getMonth() + 3);
+      break;
+    case 'Semestral':
+      next.setMonth(next.getMonth() + 6);
+      break;
+    case 'Anual':
+      next.setFullYear(next.getFullYear() + 1);
+      break;
+  }
+  
+  // Formata a data para o formato YYYY-MM-DD
+  const nextFormatted = next.toISOString().split('T')[0];
+  document.getElementById(`${equipment}-proxima`).value = nextFormatted;
+}
+
+// Funções para adicionar novo equipamento
+function openAddEquipmentModal() {
+  document.getElementById('addEquipmentModal').style.display = 'block';
+}
+
+function closeAddEquipmentModal() {
+  document.getElementById('addEquipmentModal').style.display = 'none';
+  document.getElementById('newEquipmentForm').reset();
+}
+
+function addNewEquipment() {
+  const name = document.getElementById('new-equipment-name').value;
+  const id = document.getElementById('new-equipment-id').value;
+  const location = document.getElementById('new-equipment-location').value;
+  
+  if (!name || !id || !location) {
+    alert('Por favor, preencha todos os campos!');
+    return;
+  }
+  
+  // Cria um novo ID para a aba (remove espaços e caracteres especiais)
+  const tabId = name.replace(/[^a-zA-Z0-9]/g, '');
+  
+  // Adiciona o novo equipamento ao array
+  equipments.push({
+    id: tabId.toLowerCase(),
+    name: name,
+    tabId: tabId
+  });
+  
+  // Cria uma nova aba
+  createNewTab(name, tabId, id, location);
+  
+  // Fecha o modal e limpa o formulário
+  closeAddEquipmentModal();
+  
+  alert(`Equipamento "${name}" adicionado com sucesso!`);
+}
+
+function createNewTab(name, tabId, equipmentId, location) {
+  // Cria o botão da nova aba
+  const tabButton = document.createElement('button');
+  tabButton.className = 'tablinks';
+  tabButton.textContent = name;
+  tabButton.onclick = function(event) { openTab(event, tabId); };
+  
+  // Adiciona o botão à barra de abas
+  document.querySelector('.tab').appendChild(tabButton);
+  
+  // Cria o conteúdo da nova aba
+  const tabContent = document.createElement('div');
+  tabContent.id = tabId;
+  tabContent.className = 'tabcontent';
+  
+  // HTML do formulário do novo equipamento
+  tabContent.innerHTML = `
+    <form class="equipment-form" id="${tabId.toLowerCase()}-form">
+      <div class="form-group">
+        <label for="${tabId.toLowerCase()}-id">ID do Equipamento</label>
+        <input type="text" id="${tabId.toLowerCase()}-id" value="${equipmentId}" readonly>
+      </div>
+      
+      <div class="form-group">
+        <label for="${tabId.toLowerCase()}-localizacao">Localização</label>
+        <input type="text" id="${tabId.toLowerCase()}-localizacao" value="${location}">
+      </div>
+      
+      <div class="form-group">
+        <label for="${tabId.toLowerCase()}-tipo-manutencao">Tipo de Manutenção</label>
+        <select id="${tabId.toLowerCase()}-tipo-manutencao">
+          <option>Preventiva</option>
+          <option>Corretiva</option>
+          <option>Preditiva</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="${tabId.toLowerCase()}-frequencia">Frequência</label>
+        <select id="${tabId.toLowerCase()}-frequencia">
+          <option>Mensal</option>
+          <option>Bimestral</option>
+          <option>Trimestral</option>
+          <option>Semestral</option>
+          <option>Anual</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="${tabId.toLowerCase()}-ultima">Última Manutenção</label>
+        <input type="date" id="${tabId.toLowerCase()}-ultima">
+      </div>
+      
+      <div class="form-group">
+        <label for="${tabId.toLowerCase()}-proxima">Próxima Manutenção</label>
+        <input type="date" id="${tabId.toLowerCase()}-proxima">
+      </div>
+      
+      <div class="form-group">
+        <label for="${tabId.toLowerCase()}-responsavel">Responsável Técnico</label>
+        <input type="text" id="${tabId.toLowerCase()}-responsavel">
+      </div>
+      
+      <div class="form-group full-width">
+        <label for="${tabId.toLowerCase()}-instrucao">Instrução de Serviço</label>
+        <textarea id="${tabId.toLowerCase()}-instrucao"></textarea>
+      </div>
+      
+      <div class="form-group full-width">
+        <label for="${tabId.toLowerCase()}-pecas">Peças de Reposição</label>
+        <textarea id="${tabId.toLowerCase()}-pecas"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="${tabId.toLowerCase()}-status">Status Atual</label>
+        <select id="${tabId.toLowerCase()}-status">
+          <option value="ok">OK - Operacional</option>
+          <option value="warning">Atenção - Requer verificação</option>
+          <option value="danger">Crítico - Requer manutenção imediata</option>
+        </select>
+        <span id="${tabId.toLowerCase()}-status-display" class="status-indicator status-ok">OK - Operacional</span>
+      </div>
+      
+      <div class="form-group full-width">
+        <button type="button" class="save-btn" onclick="saveEquipment('${tabId.toLowerCase()}')">Salvar Alterações</button>
+      </div>
+      
+      <div class="history-section full-width">
+        <h3>Histórico de Manutenção</h3>
+        <div id="${tabId.toLowerCase()}-history"></div>
+      </div>
+    </form>
+  `;
+  
+  // Adiciona o conteúdo após as outras abas
+  document.querySelector('.tab').parentNode.appendChild(tabContent);
+  
+  // Abre a nova aba automaticamente
+  tabButton.click();
+}
+
+// Abre a primeira aba automaticamente
+document.getElementById("defaultOpen").click();
+</script>
+
+</body>
+</html>
